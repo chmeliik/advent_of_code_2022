@@ -5,10 +5,14 @@ mod letter {
 
     impl Letter {
         pub fn index(&self) -> u32 {
+            fn distance_from(from: char, to: char) -> u32 {
+                to as u32 - from as u32
+            }
+
             let c = self.0;
             match c {
-                'a'..='z' => c as u32 - 'a' as u32,
-                'A'..='Z' => c as u32 - 'A' as u32,
+                'a'..='z' => distance_from('a', c),
+                'A'..='Z' => distance_from('A', c) + 26,
                 _ => panic!("Letter({:?}) should not be possible", c),
             }
         }
@@ -55,7 +59,7 @@ mod letter {
             LetterSet(1 << l.index())
         }
 
-        fn union(&self, other: LetterSet) -> LetterSet {
+        pub fn union(&self, other: LetterSet) -> LetterSet {
             LetterSet(self.0 | other.0)
         }
 
@@ -100,7 +104,7 @@ mod letter {
             for i in self.curr_index..52 {
                 if self.set.0 & (1 << i) != 0 {
                     self.curr_index = i + 1;
-                    return Letter::from_index(i)
+                    return Letter::from_index(i);
                 }
             }
             self.curr_index = 52;
@@ -125,12 +129,12 @@ impl<'a> Solution<'a> for Day3Part1 {
     where
         I: Iterator<Item = &'a String>,
     {
-        let flattened: Vec<LetterSet> = lines
-            .map(|line| line.split_at(line.len() / 2))
-            .map(|(a, b)| vec![a.try_into(), b.try_into()])
-            .flatten()
-            .try_collect()?;
-        Ok(flattened.iter().cloned().tuples::<(_, _)>().collect())
+        fn two_letter_sets(line: &String) -> Result<(LetterSet, LetterSet)> {
+            let (a, b) = line.split_at(line.len() / 2);
+            Ok((a.try_into()?, b.try_into()?))
+        }
+
+        lines.map(two_letter_sets).try_collect()
     }
 
     fn solve(input: &Self::ProblemRepr) -> Self::Output {
@@ -142,5 +146,29 @@ impl<'a> Solution<'a> for Day3Part1 {
                 .sum();
             sum + s as u64
         })
+    }
+}
+
+#[cfg(test)]
+mod letter_tests {
+    use super::letter::Letter;
+    use super::letter::LetterSet;
+
+    #[test]
+    fn letter() {
+        let l = Letter::from_index(26).unwrap();
+        assert_eq!(l.index(), 26);
+    }
+
+    #[test]
+    fn letter_set() {
+        let s1 = LetterSet::try_from("abcdef").unwrap();
+        let s2 = LetterSet::try_from("ABCDEF").unwrap();
+        let s3 = s1.union(s2);
+        let letters: Vec<char> = s3.into_iter().map(|l| l.into()).collect();
+        assert_eq!(
+            letters,
+            vec!['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F']
+        )
     }
 }
