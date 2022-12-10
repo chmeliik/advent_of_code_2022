@@ -21,8 +21,8 @@ trait Solution<'a> {
 fn main() -> Result<()> {
     let lines: Vec<String> = stdin().lines().try_collect()?;
 
-    let input = day3::Day3Part1::parse_input(lines.iter())?;
-    let answer = day3::Day3Part1::solve(&input);
+    let input = day3::Day3Part2::parse_input(lines.iter())?;
+    let answer = day3::Day3Part2::solve(&input);
 
     println!("answer = {:?}", answer);
 

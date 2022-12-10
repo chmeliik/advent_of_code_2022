@@ -1,5 +1,8 @@
 mod letter {
+    use std::fmt::Debug;
+
     use anyhow::anyhow;
+    use itertools::Itertools;
 
     pub struct Letter(char);
 
@@ -92,6 +95,13 @@ mod letter {
         }
     }
 
+    impl Debug for LetterSet {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let s: String = self.into_iter().map_into::<char>().collect();
+            write!(f, "LetterSet({:?})", s)
+        }
+    }
+
     pub struct IterLetters {
         set: LetterSet,
         curr_index: u32,
@@ -113,11 +123,13 @@ mod letter {
     }
 }
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use itertools::Itertools;
 
 use crate::Solution;
 use letter::LetterSet;
+
+use self::letter::Letter;
 
 pub struct Day3Part1;
 
@@ -146,6 +158,35 @@ impl<'a> Solution<'a> for Day3Part1 {
                 .sum();
             sum + s as u64
         })
+    }
+}
+
+pub struct Day3Part2;
+
+impl<'a> Solution<'a> for Day3Part2 {
+    type ProblemRepr = Vec<(LetterSet, LetterSet, LetterSet)>;
+    type Output = Result<u64>;
+
+    fn parse_input<I>(lines: I) -> Result<Self::ProblemRepr>
+    where
+        I: Iterator<Item = &'a String>,
+    {
+        lines
+            .map(|l| l.as_str().try_into())
+            .tuples::<(_, _, _)>()
+            .map(|(a, b, c)| Ok((a?, b?, c?)))
+            .try_collect()
+    }
+
+    fn solve(input: &Self::ProblemRepr) -> Self::Output {
+        fn find_badge((a, b, c): &(LetterSet, LetterSet, LetterSet)) -> Result<Letter> {
+            let common = a.intersection(*b).intersection(*c);
+            let badge = common.into_iter().next();
+            badge.ok_or(anyhow!("no common badges: {:?} {:?} {:?}", a, b, c))
+        }
+
+        let maybe_sum: Result<u32> = input.iter().map(find_badge).map_ok(|l| l.index() + 1).sum();
+        maybe_sum.map(|s| s as u64)
     }
 }
 
